@@ -1,0 +1,98 @@
+#
+# Generated backup file, do not edit.
+#
+# Originally at: /hd0a/TEMP/backup.672014
+# 2022-09-03  07:16:48
+#
+>>SYSTEM_ID:
+14000-501648
+
+>>PRODUCTS_ID:
+RobotWare Version: 6.08.00.00
+SmartGripper Version: 3.56.0000.00
+
+  Contact L
+  UDPUC Driver
+  Leadthrough
+  YuMi AbsAcc Recovery
+  RobotWare Base
+  English
+  709-1 DeviceNet Master/Slave
+  841-1 EtherNet/IP Scanner/Adapter
+  603-1 Absolute Accuracy
+  988-1 RW Add-In Prepared
+  604-1 MultiMove Coordinated
+  608-1 World Zones
+  611-1 Path Recovery
+  612-1 Path Offset
+  613-1 Collision Detection
+  616-1 PC Interface
+  688-1 RobotStudio App Connect
+  617-1 FlexPendant Interface
+  623-1 Multitasking
+  689-1 Externally Guided Motion (EGM)
+  1341-1/1520-1 Integrated Vision Interface
+  Hall Sensor Calibration
+  Pendelum Calibration
+  Motor Commutation
+  Service Info System
+  IRB 14000-0.5/0.5
+  Drive System IRB 14000
+  SmartGripper
+
+>>HOME:
+All public files and directories
+
+>>SYSPAR:
+SYS.cfg
+PROC.cfg
+MMC.cfg
+EIO.cfg
+SIO.cfg
+MOC.cfg
+
+
+>>TASK1: (T_ROB_R,,)
+SYSMOD/ROS_common.sys @ 
+SYSMOD/user.sys @ 
+PROGMOD/ROS_EGM_R.mod @ 
+SYSMOD/ROS_messages.sys @ 
+SYSMOD/ROS_socket.sys @ 
+
+>>TASK2: (T_ROB_L,,)
+SYSMOD/ROS_common.sys @ 
+SYSMOD/user.sys @ 
+SYSMOD/ROS_messages.sys @ 
+PROGMOD/ROS_EGM_L.mod @ 
+SYSMOD/ROS_socket.sys @ 
+
+>>TASK3: (ROS_StateServer_L,,)
+SYSMOD/ROS_common.sys @ 
+SYSMOD/user.sys @ 
+SYSMOD/ROS_messages.sys @ 
+PROGMOD/ROS_stateServer_L.mod @ 
+SYSMOD/ROS_socket.sys @ 
+
+>>TASK4: (ROS_MotionServer_L,,)
+SYSMOD/ROS_common.sys @ 
+SYSMOD/user.sys @ 
+SYSMOD/ROS_messages.sys @ 
+PROGMOD/ROS_motionServer_L.mod @ 
+SYSMOD/ROS_socket.sys @ 
+
+>>TASK5: (ROS_MotionServer_R,,)
+SYSMOD/ROS_common.sys @ 
+SYSMOD/user.sys @ 
+PROGMOD/ROS_motionServer_R.mod @ 
+SYSMOD/ROS_messages.sys @ 
+SYSMOD/ROS_socket.sys @ 
+
+>>TASK6: (ROS_StateServer_R,,)
+SYSMOD/ROS_common.sys @ 
+SYSMOD/user.sys @ 
+PROGMOD/ROS_stateServer_R.mod @ 
+SYSMOD/ROS_messages.sys @ 
+SYSMOD/ROS_socket.sys @ 
+
+
+>>EOF:

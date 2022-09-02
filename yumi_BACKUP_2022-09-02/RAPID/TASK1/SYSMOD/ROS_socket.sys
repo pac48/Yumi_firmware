@@ -1,0 +1,54 @@
+MODULE ROS_socket(SYSMODULE)
+
+PROC ROS_init_socket(VAR socketdev server_socket, num port)
+    IF (SocketGetStatus(server_socket) = SOCKET_CLOSED) SocketCreate server_socket;
+    IF (SocketGetStatus(server_socket) = SOCKET_CREATED) SocketBind server_socket, "192.168.1.13", port;
+    IF (SocketGetStatus(server_socket) = SOCKET_BOUND) SocketListen server_socket;
+
+ERROR
+    RAISE;  ! raise errors to calling code
+ENDPROC
+
+PROC ROS_wait_for_client(VAR socketdev server_socket, VAR socketdev client_socket, \num wait_time)
+    VAR string client_ip;
+    VAR num time_val := WAIT_MAX;  ! default to wait-forever
+
+    IF Present(wait_time) time_val := wait_time;
+
+    IF (SocketGetStatus(client_socket) <> SOCKET_CLOSED) SocketClose client_socket;
+    WaitUntil (SocketGetStatus(client_socket) = SOCKET_CLOSED);
+
+    SocketAccept server_socket, client_socket, \ClientAddress:=client_ip, \Time:=time_val;
+    TPWrite "Client at "+client_ip+" connected.";
+
+ERROR
+    RAISE;  ! raise errors to calling code
+ENDPROC
+
+PROC ROS_receive_msg(VAR socketdev client_socket, VAR ROS_msg message, \num wait_time)
+    VAR rawbytes buffer;
+    VAR num time_val := WAIT_MAX;  ! default to wait-forever
+    VAR num bytes_rcvd;
+    VAR num msg_length;
+    ClearRawBytes buffer;
+    IF Present(wait_time) time_val := wait_time;
+    SocketReceive client_socket, \RawData:=buffer, \Time:=time_val;
+    ! Unpack message header/data
+    UnpackRawBytes buffer, 1, message.header.msg_type, \IntX:=DINT;
+    CopyRawBytes   buffer, 5, message.data, 1;
+    
+ERROR
+    RAISE;  ! raise errors to calling code
+ENDPROC
+
+PROC ROS_send_msg(VAR socketdev client_socket, VAR ROS_msg message)
+    VAR rawbytes buffer;
+    PackRawBytes message.header.msg_type,        buffer,  1, \IntX := DINT;  ! Message type
+    CopyRawBytes message.data, 1,                buffer, 5;                 ! Message data
+    SocketSend client_socket \RawData:=buffer;
+    
+ERROR
+    RAISE;
+ENDPROC
+
+ENDMODULE

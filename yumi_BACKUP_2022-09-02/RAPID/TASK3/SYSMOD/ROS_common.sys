@@ -1,0 +1,5 @@
+MODULE ROS_common(SYSMODULE)
+
+PERS num cycle_time := 0.02;
+
+ENDMODULE

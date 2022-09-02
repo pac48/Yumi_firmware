@@ -1,0 +1,159 @@
+MODULE ROS_messages(SYSMODULE)
+! need to add BSD
+RECORD ROS_msg_header
+    num msg_type;
+ENDRECORD
+
+RECORD ROS_msg
+    ROS_msg_header header;
+    rawbytes data;
+ENDRECORD
+
+RECORD ROS_msg_joint_data
+    ROS_msg_header header;
+    jointtarget joints;  ! in DEGREES
+ENDRECORD
+
+RECORD ROS_msg_gripper_position
+    ROS_msg_header header;
+    num position;
+ENDRECORD
+
+RECORD ROS_msg_gripper_force
+    ROS_msg_header header;
+    num force;  ! in Newton
+ENDRECORD
+
+RECORD ROS_msgs
+    ROS_msg_joint_data joint_position_msg;
+    ROS_msg_gripper_position gripper_position_msg;
+    ROS_msg_gripper_force gripper_force_msg;
+    ROS_msg_joint_data joint_torque_msg;
+ENDRECORD
+
+! Message Type Codes (from simple_message/simple_message.h)
+CONST num ROS_MSG_TYPE_NULL:= 0; 
+CONST num ROS_MSG_TYPE_JOINT:= 1; 
+CONST num ROS_MSG_TYPE_GRIPPER_POSITION:= 2; 
+CONST num ROS_MSG_TYPE_GRIPPER_FORCE:= 3;
+CONST num ROS_MSG_TYPE_TORQUE:= 4; 
+CONST num ROS_MSG_LENGTH_NULL:= 0; 
+CONST num ROS_MSG_LENGTH_JOINT:= 32; 
+CONST num ROS_MSG_LENGTH_GRIPPER_POSITION:= 8; 
+CONST num ROS_MSG_LENGTH_GRIPPER_FORCE:= 8;
+VAR jointtarget joint_position_command; ! here just for simplicity
+VAR num gripper_position_command;
+VAR num gripper_force_command;
+VAR ROS_msg raw_message;
+VAR ROS_msgs msgs;
+LOCAL VAR num num1;
+LOCAL VAR num num2;
+LOCAL VAR num num3;
+LOCAL VAR num num4;
+
+PROC ROS_receive_msg_all_data(VAR socketdev client_socket)
+    VAR num i:=1;
+    msgs.joint_position_msg.header.msg_type:=ROS_MSG_TYPE_NULL;
+    msgs.gripper_position_msg.header.msg_type:=ROS_MSG_TYPE_NULL;
+    msgs.gripper_force_msg.header.msg_type:=ROS_MSG_TYPE_NULL;
+    
+    ROS_receive_msg client_socket, raw_message;
+
+    WHILE (NOT (raw_message.header.msg_type = ROS_MSG_TYPE_NULL) ) DO
+        IF (raw_message.header.msg_type = ROS_MSG_TYPE_JOINT) THEN
+            msgs.joint_position_msg.header:=raw_message.header;
+            UnpackRawBytes raw_message.data, i+0, joint_position_command.robax.rax_1, \Float4;
+            UnpackRawBytes raw_message.data, i+4, joint_position_command.robax.rax_2, \Float4;
+            UnpackRawBytes raw_message.data, i+8, joint_position_command.extax.eax_a, \Float4;
+            UnpackRawBytes raw_message.data, i+12, joint_position_command.robax.rax_3, \Float4;
+            UnpackRawBytes raw_message.data, i+16, joint_position_command.robax.rax_4, \Float4;
+            UnpackRawBytes raw_message.data, i+20, joint_position_command.robax.rax_5, \Float4;
+            UnpackRawBytes raw_message.data, i+24, joint_position_command.robax.rax_6, \Float4;
+            msgs.joint_position_msg.joints:=joint_position_command;
+            i:=i+ROS_MSG_LENGTH_JOINT; 
+        ELSEIF(raw_message.header.msg_type = ROS_MSG_TYPE_GRIPPER_POSITION) THEN
+            msgs.gripper_position_msg.header:=raw_message.header;
+            UnpackRawBytes raw_message.data, i+0, msgs.gripper_position_msg.position, \Float4; 
+           ! g_MoveTo(msgs.gripper_position_msg.position);
+            i:=i+ROS_MSG_LENGTH_GRIPPER_POSITION;
+        ELSEIF(raw_message.header.msg_type = ROS_MSG_TYPE_GRIPPER_FORCE) THEN
+            msgs.gripper_force_msg.header:=raw_message.header;
+            UnpackRawBytes raw_message.data, i+0, msgs.gripper_force_msg.force, \Float4;
+         !   IF msgs.gripper_force_msg.force < 0.0 THEN
+          !      g_GripIn \holdForce:=-msgs.gripper_force_msg.force;
+           ! ELSE
+            !    g_GripOut \holdForce:=msgs.gripper_force_msg.force;
+            !ENDIF
+            i:=i+ROS_MSG_LENGTH_GRIPPER_FORCE;
+        ENDIF
+        UnpackRawBytes raw_message.data, i, raw_message.header.msg_type,\IntX:=DINT;
+    ENDWHILE
+
+ERROR
+    RAISE;  ! raise errors to calling code
+ENDPROC
+
+PROC ROS_send_msg_all_data(VAR socketdev client_socket, ROS_msgs msgs)
+    raw_message.header.msg_type := ROS_MSG_TYPE_NULL;
+    packRawBytes ROS_MSG_TYPE_JOINT,raw_message.data,  1, \IntX := DINT;  ! Message type
+    packRawBytes msgs.joint_position_msg.joints.robax.rax_1, raw_message.data, 5, \Float4;     
+    packRawBytes msgs.joint_position_msg.joints.robax.rax_2, raw_message.data, 9, \Float4;  
+    packRawBytes msgs.joint_position_msg.joints.extax.eax_a, raw_message.data, 13, \Float4;  
+    packRawBytes msgs.joint_position_msg.joints.robax.rax_3, raw_message.data, 17, \Float4;  
+    packRawBytes msgs.joint_position_msg.joints.robax.rax_4, raw_message.data, 21, \Float4;  
+    packRawBytes msgs.joint_position_msg.joints.robax.rax_5, raw_message.data, 25, \Float4;  
+    packRawBytes msgs.joint_position_msg.joints.robax.rax_6, raw_message.data, 29, \Float4;  
+    packRawBytes ROS_MSG_TYPE_GRIPPER_POSITION,raw_message.data,  33, \IntX := DINT;  ! Message type
+    packRawBytes msgs.gripper_position_msg.position, raw_message.data, 37, \Float4;
+    packRawBytes ROS_MSG_TYPE_GRIPPER_FORCE, raw_message.data,  41, \IntX := DINT;  ! Message type
+    packRawBytes msgs.gripper_force_msg.force, raw_message.data, 45, \Float4;
+    packRawBytes ROS_MSG_TYPE_TORQUE, raw_message.data,  49, \IntX := DINT;  ! Message type
+    packRawBytes msgs.joint_torque_msg.joints.robax.rax_1, raw_message.data, 53, \Float4;     
+    packRawBytes msgs.joint_torque_msg.joints.robax.rax_2, raw_message.data, 57, \Float4;  
+    packRawBytes msgs.joint_torque_msg.joints.extax.eax_a, raw_message.data, 61, \Float4;  
+    packRawBytes msgs.joint_torque_msg.joints.robax.rax_3, raw_message.data, 65, \Float4;  
+    packRawBytes msgs.joint_torque_msg.joints.robax.rax_4, raw_message.data, 69, \Float4;  
+    packRawBytes msgs.joint_torque_msg.joints.robax.rax_5, raw_message.data, 73, \Float4;  
+    packRawBytes msgs.joint_torque_msg.joints.robax.rax_6, raw_message.data, 77, \Float4;  
+    ROS_send_msg client_socket, raw_message;
+
+ERROR
+    RAISE;  ! raise errors to calling code
+ENDPROC
+
+! helper functions
+LOCAL FUNC num deg2rad(num deg)
+    RETURN deg * pi / 180;
+ENDFUNC
+
+LOCAL FUNC jointtarget deg2rad_robjoint(jointtarget deg)
+    VAR jointtarget rad;
+    rad.robax.rax_1 := deg2rad(deg.robax.rax_1);
+    rad.robax.rax_2 := deg2rad(deg.robax.rax_2);
+    rad.robax.rax_3 := deg2rad(deg.robax.rax_3);
+    rad.robax.rax_4 := deg2rad(deg.robax.rax_4);
+    rad.robax.rax_5 := deg2rad(deg.robax.rax_5);
+    rad.robax.rax_6 := deg2rad(deg.robax.rax_6);
+    rad.extax.eax_a := deg2rad(deg.extax.eax_a);
+    rad.extax.eax_b := deg2rad(deg.extax.eax_b);
+    RETURN rad;
+ENDFUNC
+
+LOCAL FUNC num rad2deg(num rad)
+    RETURN rad * 180 / pi;
+ENDFUNC
+
+LOCAL FUNC jointtarget rad2deg_robjoint(jointtarget rad)
+    VAR jointtarget deg;
+    deg.robax.rax_1 := rad2deg(rad.robax.rax_1);
+    deg.robax.rax_2 := rad2deg(rad.robax.rax_2);
+    deg.robax.rax_3 := rad2deg(rad.robax.rax_3);
+    deg.robax.rax_4 := rad2deg(rad.robax.rax_4);
+    deg.robax.rax_5 := rad2deg(rad.robax.rax_5);
+    deg.robax.rax_6 := rad2deg(rad.robax.rax_6);
+    deg.extax.eax_a := rad2deg(rad.extax.eax_a);
+    deg.extax.eax_b := rad2deg(rad.extax.eax_b);
+    RETURN deg;
+ENDFUNC
+
+ENDMODULE
