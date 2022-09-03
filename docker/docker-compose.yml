@@ -1,0 +1,26 @@
+version: '2'
+
+services:
+    yumi_controller:
+       # networks:
+       #     appnet:
+       #         ipv4_address: 192.168.1.5
+        image: "pac48/ros-humble-yumi:latest"
+        privileged: true
+        network_mode: host
+        #ipc: host
+        environment:
+            - ROS_DOMAIN_ID=20
+        command: ros2 launch yumi_control yumi_control.launch.py
+        
+#networks:
+#    host:
+#        name: host
+#        external: true
+#    appnet:
+#        driver: bridge
+#        ipam:
+#            driver: default
+#            config:
+#                - subnet: "192.168.1.0/24"
+
