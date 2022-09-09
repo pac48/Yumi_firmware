@@ -9,7 +9,7 @@ WORKDIR /tmp
 RUN git clone https://github.com/ros-industrial/abb_libegm.git
 WORKDIR abb_libegm
 RUN mkdir build 
-WORKDIR abb_libegm
+WORKDIR build
 RUN cmake ..
 RUN make install
 
