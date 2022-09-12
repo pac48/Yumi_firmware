@@ -1,6 +1,7 @@
 MODULE ROS_motionServer_L
     VAR num gripperPosition;   
-    VAR jointtarget jointCommand;  
+    VAR jointtarget jointCommand;
+    VAR num hold_force;
     LOCAL CONST num server_port:=12000;
     LOCAL CONST num update_rate:=0.01;
     ! broadcast rate (sec)
@@ -14,6 +15,7 @@ MODULE ROS_motionServer_L
         g_Calibrate;
         g_Init \maxSpd:=20, \holdForce:=20;
         g_MoveTo(10);
+        hold_force := 20;
         TPWrite "MotionServer_L: Waiting for connection.";
         ROS_init_socket server_socket,server_port;
         ROS_wait_for_client server_socket,client_socket;
@@ -38,19 +40,28 @@ MODULE ROS_motionServer_L
     
     LOCAL PROC get_data()
         ROS_receive_msg_all_data client_socket;
-        IF (NOT msgs.gripper_force_msg.header.msg_type = ROS_MSG_TYPE_NULL) THEN
-            IF msgs.gripper_force_msg.force < 0.0 THEN
-                g_GripIn \holdForce:=-msgs.gripper_force_msg.force;
-            ELSE
-                g_GripOut \holdForce:=msgs.gripper_force_msg.force;
-            ENDIF
-        ENDIF
         IF (NOT msgs.gripper_position_msg.header.msg_type = ROS_MSG_TYPE_NULL) THEN
-           g_MoveTo(msgs.gripper_position_msg.position);
+            IF (NOT msgs.gripper_force_msg.header.msg_type = ROS_MSG_TYPE_NULL) THEN
+                hold_force:= msgs.gripper_force_msg.force;
+            ELSE
+                hold_force:= 20;
+            ENDIF
+            g_SetForce hold_force;
+            IF msgs.gripper_position_msg.position < g_GetPos() THEN
+                g_GripIn \NoWait;
+             ELSE
+                g_GripOut \NoWait;
+            ENDIF
+            !IF msgs.gripper_position_msg.position < g_GetPos() THEN
+            !    g_GripIn \holdForce:=hold_force \targetPos:=msgs.gripper_position_msg.position \NoWait;
+                !  (not working) posAllowance := 20 means that the gripper will not raise an error even if it stops 20 mm from goal
+            !ELSE
+            !   g_GripOut \holdForce:=hold_force \targetPos:=msgs.gripper_position_msg.position \NoWait;
+            !ENDIF
         ENDIF
-            TPWrite"gripper_position_L type" \Num:=msgs.gripper_position_msg.header.msg_type;
+        !TPWrite"gripper_position_L type" \Num:=msgs.gripper_position_msg.header.msg_type;
         TPWrite"gripper_position_L position" \Num:= msgs.gripper_position_msg.position;
-       TPWrite"gripper_force_L type" \Num:=msgs.gripper_force_msg.header.msg_type;
+        !TPWrite"gripper_force_L type" \Num:=msgs.gripper_force_msg.header.msg_type;
         TPWrite"gripper_force_L force" \Num:= msgs.gripper_force_msg.force;
     ERROR
         RAISE ;
